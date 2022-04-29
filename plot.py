@@ -20,6 +20,7 @@ with open('./data_A4_2019-11-26.json', 'r') as f:
 # =============================================================================
 # set the title of the page
 # =============================================================================
+st. set_page_config(layout="wide")
 st.title('Fundamental Diagram Visualizer')
 st.subheader('by MYtraffiCZeal ([@DiTTlab](https://dittlab.tudelft.nl/index.php))')
 image = Image.open('logo.png')
@@ -62,124 +63,134 @@ e_time = st.sidebar.time_input(
 'You selected loop detector:', '#', loc
 st.warning('Density is calculated from flow and speed. Be careful to use!')
 
-show_map = st.checkbox('Show map')
-show_data = st.checkbox('Show data')
-show_fd_scatter = st.checkbox('Show FD scatter')
-show_params = st.checkbox('Show identified parameters')
+
+
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    show_map = st.checkbox('Show map')
+    show_data = st.checkbox('Show data')
+    show_fd_scatter = st.checkbox('Show FD scatter')
+    show_params = st.checkbox('Show identified parameters')
+        # =============================================================================
+    # Other resources
+    # =============================================================================
+    st.subheader('Other resources:')
+    st.write('Fundamental diagram (wiki): click [here](https://en.wikipedia.org/wiki/Fundamental_diagram_of_traffic_flow)')
+    st.write('Traffic wave (wiki): click [here](https://en.wikipedia.org/wiki/Traffic_wave)')
+    st.write('TU Delft open course material (fundamental diagram): click [here](https://ocw.tudelft.nl/wp-content/uploads/Chapter-4.-Fundamental-diagrams.pdf)')
+    st.write('TU Delft open course material (shockwave analysis): click [here](https://ocw.tudelft.nl/wp-content/uploads/Chapter-8.-Shock-wave-analysis.pdf)')
+
+
 
 flow = np.array(data['data']['flow'])[loc]
 speed = np.array(data['data']['speed'])[loc]
 density = flow / speed
-
+with col2:
 # =============================================================================
 # show the map
 # =============================================================================
-if show_map:
-    linestring_fn = 'A4-1.txt'
-    with open (linestring_fn, 'r') as f:
-        linestring = f.read()
-    linestring = json.loads(linestring)
+    if show_map:
+        linestring_fn = 'A4-1.txt'
+        with open (linestring_fn, 'r') as f:
+            linestring = f.read()
+        linestring = json.loads(linestring)
 
-    coordinatess = np.asarray(pd.DataFrame.from_dict(linestring['geometry']['coordinates']))
-    def create_basic_map():
-        basic_map = folium.Map(location=list(coordinatess[0]), tiles='openstreetmap', zoom_start=5)
-        for i in coordinatess:
-            folium.Marker(list(i)).add_to(basic_map)
-        return folium_static(basic_map, width=500, height=300)
+        coordinatess = np.asarray(pd.DataFrame.from_dict(linestring['geometry']['coordinates']))
+        def create_basic_map():
+            basic_map = folium.Map(location=list(coordinatess[7]), tiles='openstreetmap', zoom_start=10)
+            for i in coordinatess:
+                folium.Marker(list(i)).add_to(basic_map)
+            # create a PolyLine from the flipped series
+            folium.PolyLine(coordinatess,color = 'red').add_to(basic_map)
+            return folium_static(basic_map, width=500, height=300)
 
-    # session_state.key = True
-    st.header('Map')
-    create_basic_map()
-
-
-# =============================================================================
-# show the data
-# =============================================================================
-if show_data:
-    st.header('Data for detector #' + str(loc) + ':')
-    df = pd.DataFrame({
-        'Flow': flow,
-        'Speed': speed,
-        'Density': flow / speed
-    })
-    'The data:'
-    st.write(df)
-    
-    @st.cache
-    def convert_df(df):
-        # IMPORTANT: Cache the conversion to prevent computation on every rerun
-        return df.to_csv().encode('utf-8')
-
-    csv = convert_df(df)
-
-    st.download_button(
-        label="Download data as CSV",
-        data=csv,
-        file_name='data_' + str(loc) + '.csv',
-        mime='text/csv',
-    )
+        # session_state.key = True
+        st.header('Map')
+        create_basic_map()
 
 
-# =============================================================================
-# button for showing FD scatter
-# =============================================================================
-if show_fd_scatter:
-    st.header('FD scatter plot for detector #' + str(loc) + ':')
-    fig = plt.figure(figsize=(16,14))
-    plt.rcParams["font.size"] = 16
+    # =============================================================================
+    # show the data
+    # =============================================================================
+    if show_data:
+        st.header('Data for detector #' + str(loc) + ':')
+        df = pd.DataFrame({
+            'Flow': flow,
+            'Speed': speed,
+            'Density': flow / speed
+        })
+        'The data:'
+        st.write(df)
+        
+        @st.cache
+        def convert_df(df):
+            # IMPORTANT: Cache the conversion to prevent computation on every rerun
+            return df.to_csv().encode('utf-8')
 
-    plt.subplot(2, 2, 1)
-    plt.scatter(flow[240:-360], speed[240:-360], marker='o', s=10, c='r', label='6am-8pm')
-    plt.scatter(flow[:240], speed[:240], marker='o', s=10, c='lightsalmon', label='4~6am, 8~10pm')
-    plt.scatter(flow[-360:], speed[-360:], marker='o', s=10, c='lightsalmon')
-    plt.legend()
-    plt.xlabel('Flow (veh/hr/lane)')
-    plt.ylabel('Speed (km/hr)')
-    plt.title('Flow vs Speed')
+        csv = convert_df(df)
 
-    plt.subplot(2, 2, 2)
-    plt.scatter(density[240:-360], flow[240:-360], marker='^', s=10, c='b', label='6am-8pm')
-    plt.scatter(density[:240], flow[:240], marker='^', s=10, c='skyblue', label='4~6am, 8~10pm')
-    plt.scatter(density[-360:], flow[-360:], marker='^', s=10, c='skyblue')
-    plt.legend()
-    plt.xlabel('Density (veh/km/lane)')
-    plt.ylabel('Flow (veh/hr/lane)')
-    plt.title('Density vs Flow')
-
-    plt.subplot(2, 2, 3)
-    plt.scatter(density[240:-360], speed[240:-360], marker='+', s=10, c='g', label='6am-8pm')
-    plt.scatter(density[:240], speed[:240], marker='+', s=10, c='lightgreen', label='4~6am, 8~10pm')
-    plt.scatter(density[-360:], speed[-360:], marker='+', s=10, c='lightgreen')
-    plt.legend()
-    plt.xlabel('Density (veh/km/lane)')
-    plt.ylabel('Speed (km/hr)')
-    plt.title('Density vs Speed')
-    st.pyplot(fig)
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name='data_' + str(loc) + '.csv',
+            mime='text/csv',
+        )
 
 
-# =============================================================================
-# button for showing identified parameters
-# =============================================================================
-if show_params:
-    st.header('Identified parameters for detector #' + str(loc) + ':')
-    k = 20.9
-    s = 93.7
-    c = 1704.5
-    v = 105.9
-    w1, w2 = 103.6, -12.3
-    'Critical density:', k, 'veh/km/lane'
-    'Speed at critical density:', s, 'km/hr'
-    'Capacity:', c, 'veh/hr/lane'
-    'Free-fow speed:', v, 'km/hr'
-    'Forward wave speed:', w1, 'km/hr'
-    'Backward wave speed:', w2, 'km/hr'
+    # =============================================================================
+    # button for showing FD scatter
+    # =============================================================================
+    if show_fd_scatter:
+        st.header('FD scatter plot for detector #' + str(loc) + ':')
+        fig = plt.figure(figsize=(16,14))
+        plt.rcParams["font.size"] = 16
 
-# =============================================================================
-# Other resources
-# =============================================================================
-st.subheader('Other resources:')
-st.write('Fundamental diagram (wiki): click [here](https://en.wikipedia.org/wiki/Fundamental_diagram_of_traffic_flow)')
-st.write('Traffic wave (wiki): click [here](https://en.wikipedia.org/wiki/Traffic_wave)')
-st.write('TU Delft open course material (fundamental diagram): click [here](https://ocw.tudelft.nl/wp-content/uploads/Chapter-4.-Fundamental-diagrams.pdf)')
-st.write('TU Delft open course material (shockwave analysis): click [here](https://ocw.tudelft.nl/wp-content/uploads/Chapter-8.-Shock-wave-analysis.pdf)')
+        plt.subplot(2, 2, 1)
+        plt.scatter(flow[240:-360], speed[240:-360], marker='o', s=10, c='r', label='6am-8pm')
+        plt.scatter(flow[:240], speed[:240], marker='o', s=10, c='lightsalmon', label='4~6am, 8~10pm')
+        plt.scatter(flow[-360:], speed[-360:], marker='o', s=10, c='lightsalmon')
+        plt.legend()
+        plt.xlabel('Flow (veh/hr/lane)')
+        plt.ylabel('Speed (km/hr)')
+        plt.title('Flow vs Speed')
+
+        plt.subplot(2, 2, 2)
+        plt.scatter(density[240:-360], flow[240:-360], marker='^', s=10, c='b', label='6am-8pm')
+        plt.scatter(density[:240], flow[:240], marker='^', s=10, c='skyblue', label='4~6am, 8~10pm')
+        plt.scatter(density[-360:], flow[-360:], marker='^', s=10, c='skyblue')
+        plt.legend()
+        plt.xlabel('Density (veh/km/lane)')
+        plt.ylabel('Flow (veh/hr/lane)')
+        plt.title('Density vs Flow')
+
+        plt.subplot(2, 2, 3)
+        plt.scatter(density[240:-360], speed[240:-360], marker='+', s=10, c='g', label='6am-8pm')
+        plt.scatter(density[:240], speed[:240], marker='+', s=10, c='lightgreen', label='4~6am, 8~10pm')
+        plt.scatter(density[-360:], speed[-360:], marker='+', s=10, c='lightgreen')
+        plt.legend()
+        plt.xlabel('Density (veh/km/lane)')
+        plt.ylabel('Speed (km/hr)')
+        plt.title('Density vs Speed')
+        st.pyplot(fig)
+
+
+    # =============================================================================
+    # button for showing identified parameters
+    # =============================================================================
+    if show_params:
+        st.header('Identified parameters for detector #' + str(loc) + ':')
+        k = 20.9
+        s = 93.7
+        c = 1704.5
+        v = 105.9
+        w1, w2 = 103.6, -12.3
+        'Critical density:', k, 'veh/km/lane'
+        'Speed at critical density:', s, 'km/hr'
+        'Capacity:', c, 'veh/hr/lane'
+        'Free-fow speed:', v, 'km/hr'
+        'Forward wave speed:', w1, 'km/hr'
+        'Backward wave speed:', w2, 'km/hr'
 
