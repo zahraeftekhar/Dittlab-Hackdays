@@ -56,31 +56,48 @@ e_time = st.sidebar.time_input(
 'You selected ending time: ', e_date, e_time
 'You selected loop detector:', '#', loc
 
-# =============================================================================
-# show the data
-# =============================================================================
+show_data = st.checkbox('Show data')
+show_fd_scatter = st.checkbox('Show FD scatter')
+show_params = st.checkbox('Show identified parameters')
+
 flow = np.array(data['data']['flow'])[loc]
 speed = np.array(data['data']['speed'])[loc]
 density = flow / speed
-if st.button('Show the data'):
-    'The data:'
-    st.write(pd.DataFrame({
+
+# =============================================================================
+# show the data
+# =============================================================================
+if show_data:
+    st.header('Data for detector #' + str(loc) + ':')
+    st.warning('Density is calculated from flow and speed. Be careful to use!')
+    df = pd.DataFrame({
         'Flow': flow,
         'Speed': speed,
         'Density': flow / speed
-    }))
-else:
-     st.write('Loading data...')
+    })
+    'The data:'
+    st.write(df)
+    
+    @st.cache
+    def convert_df(df):
+        # IMPORTANT: Cache the conversion to prevent computation on every rerun
+        return df.to_csv().encode('utf-8')
+
+    csv = convert_df(df)
+
+    st.download_button(
+        label="Download data as CSV",
+        data=csv,
+        file_name='data_' + str(loc) + '.csv',
+        mime='text/csv',
+    )
 
 
 # =============================================================================
 # button for showing FD scatter
 # =============================================================================
-if st.button('Show FD scatter'):
-    flow = np.array(data['data']['flow'])[loc]
-    speed = np.array(data['data']['speed'])[loc]
-    density = flow / speed
-
+if show_fd_scatter:
+    st.header('FD scatter plot for detector #' + str(loc) + ':')
     fig = plt.figure(figsize=(14,14))
     plt.subplot(2, 2, 1)
     plt.scatter(flow, speed, marker='o', s=10, c='r')
@@ -100,13 +117,13 @@ if st.button('Show FD scatter'):
     plt.ylabel('Speed (km/hr)')
     plt.title('Density vs Speed')
     st.pyplot(fig)
-else:
-     st.write('Plotting...')
+
 
 # =============================================================================
 # button for showing identified parameters
 # =============================================================================
-if st.button('Identify parameters'):
+if show_params:
+    st.header('Identified parameters for detector #' + str(loc) + ':')
     k = 20.9
     s = 93.7
     c = 1704.5
@@ -118,5 +135,3 @@ if st.button('Identify parameters'):
     'Free-fow speed:', v, 'km/hr'
     'Forward wave speed:', w1, 'km/hr'
     'Backward wave speed:', w2, 'km/hr'
-else:
-     st.write('Identifying...')
