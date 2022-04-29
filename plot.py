@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 # =============================================================================
 with open('./data_A4_2019-11-26.json', 'r') as f:
     data = json.load(f)
-
 # =============================================================================
 # set the title of the page
 # =============================================================================
@@ -135,3 +134,34 @@ if show_params:
     'Free-fow speed:', v, 'km/hr'
     'Forward wave speed:', w1, 'km/hr'
     'Backward wave speed:', w2, 'km/hr'
+
+
+
+
+
+
+import folium
+from streamlit_folium import folium_static
+import pandas as pd 
+import numpy as np
+
+#     import streamlit as st
+# from streamlit import session_state
+linestring_fn = 'A4-1.txt'
+with open (linestring_fn, 'r') as f:
+    linestring = f.read()
+linestring = json.loads(linestring)
+
+
+coordinatess = np.asarray(pd.DataFrame.from_dict(linestring['geometry']['coordinates']))
+def create_basic_map():
+    basic_map = folium.Map(location=list(coordinatess[0]), tiles='openstreetmap', zoom_start=5)
+    folium.Marker(list(coordinatess[0])).add_to(basic_map)
+    return folium_static(basic_map, width=500, height=300)
+
+
+
+if st.button('Map'):
+    # session_state.key = True
+    create_basic_map()
+    st.write("Map")
