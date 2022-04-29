@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import folium
+from PIL import Image
 
 
 
@@ -21,6 +22,8 @@ with open('./data_A4_2019-11-26.json', 'r') as f:
 # =============================================================================
 st.title('Fundamental Diagram Visualizer')
 st.subheader('by MYtraffiCZeal ([@DiTTlab](https://dittlab.tudelft.nl/index.php))')
+image = Image.open('logo.png')
+st.image(image)
 
 # =============================================================================
 # select the location
@@ -80,7 +83,8 @@ if show_map:
     coordinatess = np.asarray(pd.DataFrame.from_dict(linestring['geometry']['coordinates']))
     def create_basic_map():
         basic_map = folium.Map(location=list(coordinatess[0]), tiles='openstreetmap', zoom_start=5)
-        folium.Marker(list(coordinatess[0])).add_to(basic_map)
+        for i in coordinatess:
+            folium.Marker(list(i)).add_to(basic_map)
         return folium_static(basic_map, width=500, height=300)
 
     # session_state.key = True
