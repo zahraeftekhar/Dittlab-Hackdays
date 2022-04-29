@@ -57,6 +57,9 @@ e_time = st.sidebar.time_input(
     "Select your ending date:",
     datetime.time(22, 0)
 )
+image1 = Image.open('WhatsApp Image 2022-04-29 at 11.17.13 AM.jpeg')
+st.sidebar.image(image1)
+
 
 'You selected starting time: ', s_date, s_time
 'You selected ending time: ', e_date, e_time
@@ -193,4 +196,3 @@ with col2:
         'Free-fow speed:', v, 'km/hr'
         'Forward wave speed:', w1, 'km/hr'
         'Backward wave speed:', w2, 'km/hr'
-
