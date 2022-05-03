@@ -58,7 +58,7 @@ e_time = st.sidebar.time_input(
     datetime.time(22, 0)
 )
 image1 = Image.open('WhatsApp Image 2022-04-29 at 11.17.13 AM.jpeg')
-st.sidebar.image(image1)
+st.sidebar.image(image1,use_column_width=True)
 
 
 'You selected starting time: ', s_date, s_time
@@ -95,22 +95,31 @@ with col2:
 # =============================================================================
 # show the map
 # =============================================================================
+
     if show_map:
+        from shapely.geometry import LineString, Point
+        import geopandas as gpd
+        from shapely.ops import substring
         linestring_fn = 'A4-1.txt'
         with open (linestring_fn, 'r') as f:
             linestring = f.read()
         linestring = json.loads(linestring)
-
         coordinatess = np.asarray(pd.DataFrame.from_dict(linestring['geometry']['coordinates']))
+        line = LineString(coordinatess)
+        n_seg = len(np.array(data['data']['flow']))
+        gdf = (gpd.GeoDataFrame([substring(line, (i-1)/n_seg, (i)/n_seg,normalized=True) for i in range(1, n_seg+1)], geometry = 0))
+        gdf = gpd.GeoDataFrame([np.asarray((i.coords).xy)[:,0] for i in gdf.iloc[:,0]])
+        gdf = gpd.GeoDataFrame(geometry = [Point(xy) for xy in zip(gdf[0],gdf[1])])
         def create_basic_map():
-            basic_map = folium.Map(location=list(coordinatess[7]), tiles='openstreetmap', zoom_start=10)
-            for i in coordinatess:
-                folium.Marker(list(i)).add_to(basic_map)
+            basic_map = folium.Map(location=list(np.asarray(gdf.iloc[loc,0])), tiles='openstreetmap', zoom_start=13)
+            # for i in coordinatess:
+            #     folium.Marker(list(i)).add_to(basic_map)
+            folium.Marker(np.asarray(gdf.iloc[loc,0]).tolist()).add_to(basic_map)
+
             # create a PolyLine from the flipped series
             folium.PolyLine(coordinatess,color = 'red').add_to(basic_map)
             return folium_static(basic_map, width=500, height=300)
 
-        # session_state.key = True
         st.header('Map')
         create_basic_map()
 
@@ -196,3 +205,4 @@ with col2:
         'Free-fow speed:', v, 'km/hr'
         'Forward wave speed:', w1, 'km/hr'
         'Backward wave speed:', w2, 'km/hr'
+# len(np.array(data['data']['flow']))
