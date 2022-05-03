@@ -24,7 +24,7 @@ st. set_page_config(layout="wide")
 st.title('Fundamental Diagram Visualizer')
 st.subheader('by MYtraffiCZeal ([@DiTTlab](https://dittlab.tudelft.nl/index.php))')
 image = Image.open('logo.png')
-st.image(image)
+st.sidebar.image(image)
 
 # =============================================================================
 # select the location
@@ -57,7 +57,7 @@ e_time = st.sidebar.time_input(
     "Select your ending date:",
     datetime.time(22, 0)
 )
-image1 = Image.open('WhatsApp Image 2022-04-29 at 11.17.13 AM.jpeg')
+image1 = Image.open('groupImage.jpeg')
 st.sidebar.image(image1,use_column_width=True)
 
 
